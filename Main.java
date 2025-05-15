@@ -1,41 +1,39 @@
 public class Main {
     public static void main(String[] args) {
+        int numCars = 5;
 
-        Vehicle[] vehicles = new Vehicle[6];
-        vehicles[0] = new Car("Honda", 7, 14, 7);
-        vehicles[1] = new ElectricScooter("Byd", 2);
-        vehicles[2] = new Bike("Reign", 4);
-        vehicles[3] = new Car("Kia", 8, 11, 6);
-        vehicles[4] = new ElectricScooter("Tesla", 1);
-        vehicles[5] = new Bike("Trance", 2);
+        RaceMonitor monitor = new RaceMonitor();
+        RaceResults results = new RaceResults();
+        CarThread[] cars = new CarThread[numCars];
 
-        double totalEfficiencyScore = 0;
-        double lowestCost = Double.MAX_VALUE;
-        Vehicle cheapestVehicle = null;
+        for (int i = 0; i < numCars; i++) {
+            cars[i] = new CarThread(i + 1, monitor, results);
+            cars[i].start();
+        }
 
-        for (Vehicle vehicle : vehicles) {
-            vehicle.displayInfo();
-            vehicle.fuelType();
-            vehicle.move();
-            System.out.println("Efficiency: " + vehicle.efficiencyScore());
-            System.out.println("Cost per 100 km: " + vehicle.costPer100Km() + "₪");
-            totalEfficiencyScore += vehicle.efficiencyScore();
+        while (results.getResults().size() < numCars) {
+            monitor.allowNextMove();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            monitor.stopMove();
+        }
 
-            if (lowestCost > vehicle.costPer100Km()) {
-                lowestCost = vehicle.costPer100Km();
-                cheapestVehicle = vehicle;
+        for (CarThread car : cars) {
+            try {
+                car.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
-        //calculate the average
-        double averageEfficiencyScore = totalEfficiencyScore / vehicles.length;
-        System.out.println("\nAverage Efficiency Score: " + averageEfficiencyScore);
 
-        if (cheapestVehicle != null) {
-            System.out.println("\nCheapest vehicle per 100 km:");
-            cheapestVehicle.displayInfo();
-            System.out.println("Cost per 100 km: " + cheapestVehicle.costPer100Km() + "₪");
-        } else {
-            System.out.println("\nNo vehicles found.");
+        System.out.println("\nRACE RESULTS:");
+        int rank = 1;
+        for (String car : results.getResults()) {
+            System.out.println(rank++ + ". " + car);
         }
     }
 }
